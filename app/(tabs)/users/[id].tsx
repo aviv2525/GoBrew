@@ -1,10 +1,8 @@
-// app/users/[id].tsx
-
 import { useLocalSearchParams } from 'expo-router';
 import { doc, getDoc } from 'firebase/firestore';
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, Image, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import { db } from '../lib/firebase';
+import { db } from '../../../lib/firebase';
 
 type User = {
   id: string;
@@ -20,7 +18,7 @@ type User = {
 };
 
 export default function UserProfileScreen() {
-  const { id } = useLocalSearchParams(); // id מתוך כתובת ה-URL
+  const { id } = useLocalSearchParams();
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -32,8 +30,6 @@ export default function UserProfileScreen() {
 
         if (docSnap.exists()) {
           setUser({ id: docSnap.id, ...docSnap.data() } as User);
-        } else {
-          console.warn('משתמש לא נמצא ב-Firestore');
         }
       } catch (error) {
         console.error('שגיאה בטעינה:', error);
@@ -63,7 +59,7 @@ export default function UserProfileScreen() {
 
       <Text style={styles.name}>{user.fullName || user.email}</Text>
       <Text style={styles.description}>{user.description || 'אין תיאור.'}</Text>
-      {user.rating && <Text style={styles.rating}>⭐ {user.rating.toFixed(1)} / 5</Text>}
+      {user.rating !== undefined && <Text style={styles.rating}>⭐ {user.rating.toFixed(1)} / 5</Text>}
 
       {user.address && <Text style={styles.info}>📍 {user.address}</Text>}
       {user.availableHours && <Text style={styles.info}>🕒 {user.availableHours}</Text>}

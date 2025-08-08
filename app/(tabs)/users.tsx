@@ -4,7 +4,7 @@ import { useRouter } from 'expo-router';
 import { collection, getDocs } from 'firebase/firestore';
 import { useEffect, useState } from 'react';
 import { FlatList, Image, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import { db } from '../lib/firebase';
+import { db } from '../../lib/firebase';
 
 type User = {
   id: string;
@@ -29,7 +29,6 @@ export default function UsersScreen() {
           ...doc.data(),
         })) as User[];
 
-        // סינון רק מוכרים
         const sellersOnly = fetchedUsers.filter((user) => user.role === 'seller');
         setSellers(sellersOnly);
       } catch (error) {
