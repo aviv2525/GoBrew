@@ -32,21 +32,18 @@ export default function RegisterScreen() {
         role: role,
       });
 
-      if (role === "seller") {
-        console.log("Going to seller screen");
-        router.replace('./complete-seller-profile');
+      if (role === 'seller') {
+        router.replace('/complete-seller-profile');
       } else {
-        console.log("Going to buyer screen");
-        router.replace('./users');
+        router.replace('/(tabs)/users');
       }
-
     } catch (error: any) {
       Alert.alert('שגיאה', error.message);
     }
   };
 
   const handleNavigateToLogin = () => {
-    router.replace('./login');
+    router.replace('/login');
   };
 
   return (

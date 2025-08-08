@@ -1,9 +1,9 @@
 import { StyleSheet, Text, View } from 'react-native';
 
-export default function ExploreTab() {
+export default function ProfileTab() {
   return (
     <View style={styles.container}>
-      <Text>חיפוש יגיע בקרוב</Text>
+      <Text>הפרופיל שלי יגיע בקרוב</Text>
     </View>
   );
 }

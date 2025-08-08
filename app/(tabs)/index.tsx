@@ -1,59 +1,25 @@
 import { router } from 'expo-router';
-import { signInWithEmailAndPassword } from 'firebase/auth';
-import { useState } from 'react';
-import { Alert, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
-import { auth } from '../../lib/firebase';
+import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
-
-export default function LoginScreen() {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-
-  const handleLogin = async () => {
-    try {
-      await signInWithEmailAndPassword(auth, email, password);
-      router.replace('/users'); // או כל מסך שתבחר
-    } catch (error: any) {
-      Alert.alert('שגיאה', error.message);
-    }
-  };
-
+export default function HomeTab() {
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>כניסה</Text>
-      <TextInput
-        style={styles.input}
-        placeholder="אימייל"
-        onChangeText={setEmail}
-        autoCapitalize="none"
-      />
-      <TextInput
-        style={styles.input}
-        placeholder="סיסמה"
-        onChangeText={setPassword}
-        secureTextEntry
-      />
-      <TouchableOpacity style={styles.button} onPress={handleLogin}>
-        <Text style={styles.buttonText}>התחבר</Text>
+      <Text style={styles.title}>GoBrew</Text>
+      <TouchableOpacity style={styles.button} onPress={() => router.push('/login')}>
+        <Text style={styles.buttonText}>התחברות</Text>
       </TouchableOpacity>
-    
-      <TouchableOpacity onPress={() => router.push('/register')}>
-      <Text style={{ color: 'blue', marginTop: 16, textAlign: 'center' }}>
-      אין לך חשבון? הירשם כאן
-      </Text>
+      <TouchableOpacity style={styles.secondaryButton} onPress={() => router.push('/register')}>
+        <Text style={styles.secondaryButtonText}>הרשמה</Text>
       </TouchableOpacity>
-
     </View>
-  
-);
-
-  
+  );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, justifyContent: 'center', padding: 24 },
-  title: { fontSize: 28, marginBottom: 20, textAlign: 'center' },
-  input: { borderWidth: 1, padding: 10, marginBottom: 12, borderRadius: 8 },
-  button: { backgroundColor: '#4CAF50', padding: 14, borderRadius: 8 },
-  buttonText: { color: 'white', textAlign: 'center', fontWeight: 'bold' },
+  container: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 24, backgroundColor: '#fff' },
+  title: { fontSize: 28, fontWeight: 'bold', marginBottom: 24 },
+  button: { backgroundColor: '#2e86de', paddingVertical: 14, paddingHorizontal: 24, borderRadius: 10, marginBottom: 12, alignSelf: 'stretch', marginHorizontal: 24 },
+  buttonText: { color: '#fff', textAlign: 'center', fontWeight: 'bold' },
+  secondaryButton: { borderColor: '#2e86de', borderWidth: 2, paddingVertical: 12, paddingHorizontal: 24, borderRadius: 10, alignSelf: 'stretch', marginHorizontal: 24 },
+  secondaryButtonText: { color: '#2e86de', textAlign: 'center', fontWeight: 'bold' },
 });
