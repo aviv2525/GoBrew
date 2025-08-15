@@ -3,7 +3,8 @@
 import { useRouter } from 'expo-router';
 import { collection, getDocs } from 'firebase/firestore';
 import { useEffect, useState } from 'react';
-import { FlatList, Image, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { FlatList, StyleSheet, Text, View } from 'react-native';
+import { Button, Card, Paragraph, Title } from "react-native-paper";
 import { db } from '../lib/firebase';
 
 type User = {
@@ -14,7 +15,15 @@ type User = {
   image?: string;
   description?: string;
   rating?: number;
+
+  address?: string;
+  openHours?: string;
+  drinksOffered?: string[];
+  machineType?: string;
 };
+
+
+
 
 export default function UsersScreen() {
   const [sellers, setSellers] = useState<User[]>([]);
@@ -40,25 +49,57 @@ export default function UsersScreen() {
     fetchUsers();
   }, []);
 
-  const renderItem = ({ item }: { item: User }) => (
-    <TouchableOpacity
-      style={styles.card}
-      onPress={() => router.push(`./${item.id}`)}
-    >
-      <Image
-        source={{ uri: item.image || 'https://via.placeholder.com/80' }}
-        style={styles.avatar}
-      />
-      <Text style={styles.name}>{item.fullName || item.email}</Text>
-      <Text style={styles.description}>{item.description || 'אין תיאור'}</Text>
-      {item.rating !== undefined && (
-        <Text style={styles.rating}>⭐ {item.rating.toFixed(1)} / 5</Text>
-      )}
-    </TouchableOpacity>
-  );
+const renderItem = ({ item }: { item: User }) => (
+  <Card style={styles.card} onPress={() => router.push(`./${item.id}`)}>
+    <Card.Cover source={{ uri: item.image || 'https://via.placeholder.com/400x200' }} />
+
+    <Card.Content>
+      <Title style={styles.name}>{item.fullName || item.email}</Title>
+
+      <Paragraph style={styles.description}>
+        📍 {item.address || 'כתובת לא זמינה'}
+      </Paragraph>
+
+      <Paragraph style={styles.description}>
+        🕒 {item.openHours || 'שעות לא זמינות'}
+      </Paragraph>
+
+      <Paragraph style={styles.description}>
+        ☕ {item.drinksOffered?.join(', ') || 'אין משקאות רשומים'}
+      </Paragraph>
+
+      <Paragraph style={styles.description}>
+        🛠 {item.machineType || 'סוג מכונה לא ידוע'}
+      </Paragraph>
+    </Card.Content>
+
+    <Card.Actions>
+      <Button mode="contained" onPress={() => console.log("הזמנה", item.fullName)}>
+        הזמן עכשיו
+      </Button>
+    </Card.Actions>
+  </Card>
+);
+
+  
+  if (sellers.length === 0) {
+    return (
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+        <Text>אין מוכרים זמינים כרגע</Text>
+      </View>
+    );
+  } 
 
   return (
-    <View style={styles.container}>
+
+    <View style={{ flex: 1, padding: 20 }}>
+      {/* כפתור גישה לפרופיל */}
+      <View style={{ alignItems: 'flex-end', marginBottom: 10 }}>
+        <Button title="הפרופיל שלי" onPress={() => router.push('./profile')} />
+      </View>
+
+      <Text style={{ fontSize: 24, fontWeight: 'bold' }}>משתמשיםזמינים</Text>
+
       <Text style={styles.title}>מוכרים זמינים ({sellers.length})</Text>
 
       <FlatList
@@ -72,44 +113,36 @@ export default function UsersScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    padding: 16,
-    backgroundColor: '#fff',
-  },
-  title: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    marginBottom: 12,
-  },
-  card: {
-    backgroundColor: '#f9f9f9',
-    padding: 16,
-    borderRadius: 16,
-    marginBottom: 16,
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  avatar: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    marginBottom: 8,
-  },
-  name: {
-    fontSize: 18,
-    fontWeight: '600',
-  },
-  description: {
-    textAlign: 'center',
-    marginVertical: 6,
-    color: '#555',
-  },
-  rating: {
-    fontSize: 16,
-    color: '#ffa500',
-  },
+
+card: {
+  marginBottom: 16,
+  borderRadius: 12,
+  overflow: "hidden", // חשוב בשביל שהתמונה והגרדיאנט יהיו בגבולות הכרטיס
+  elevation: 4, // צל באנדרואיד
+  shadowColor: "#000", // צל ב-iOS
+  shadowOpacity: 0.2,
+  shadowRadius: 4,
+},
+gradient: {
+  ...StyleSheet.absoluteFillObject,
+  height: 200,
+},
+name: {
+  fontSize: 18,
+  fontWeight: "bold",
+  color: "#333",
+},
+description: {
+  fontSize: 14,
+  color: "#666",
+},
+
+
+
+title: {
+  fontSize: 20,
+  fontWeight: 'bold',
+  marginBottom: 10,
+  color: '#333',
+},    
 });

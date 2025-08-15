@@ -1,116 +1,152 @@
 // app/users/[id].tsx
 
+import { Picker } from '@react-native-picker/picker';
 import { useLocalSearchParams } from 'expo-router';
-import { doc, getDoc } from 'firebase/firestore';
-import { useEffect, useState } from 'react';
-import { ActivityIndicator, Image, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import { db } from '../lib/firebase';
+import { addDoc, collection, doc, getDoc, onSnapshot, query, serverTimestamp, updateDoc, where } from 'firebase/firestore';
+import React, { useEffect, useState } from 'react';
+import { ActivityIndicator, Alert, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { auth, db } from '../lib/firebase';
 
-type User = {
-  id: string;
-  fullName?: string;
-  email: string;
-  image?: string;
-  description?: string;
-  rating?: number;
-  address?: string;
-  availableHours?: string;
-  drinks?: string[];
-  photos?: string[];
-};
 
-export default function UserProfileScreen() {
-  const { id } = useLocalSearchParams(); // id מתוך כתובת ה-URL
-  const [user, setUser] = useState<User | null>(null);
+
+export default function SellerProfileScreen() {
+  const { id: sellerId } = useLocalSearchParams();
+  const currentUser = auth.currentUser;
+  const [seller, setSeller] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [orders, setOrders] = useState<any[]>([]);
+  const [selectedDrink, setSelectedDrink] = useState("");
+  const [orderNotes, setOrderNotes] = useState("");
+  //const [sellerID ,drinksOffered,] = useState<any[]>([]);  
 
+
+  // שליפת פרטי המוכר
   useEffect(() => {
-    const fetchUser = async () => {
+    const fetchSeller = async () => {
       try {
-        const docRef = doc(db, 'users', String(id));
+        const docRef = doc(db, "users", sellerId as string);
         const docSnap = await getDoc(docRef);
-
         if (docSnap.exists()) {
-          setUser({ id: docSnap.id, ...docSnap.data() } as User);
+          setSeller({ id: docSnap.id, ...docSnap.data() });
         } else {
-          console.warn('משתמש לא נמצא ב-Firestore');
+          Alert.alert("שגיאה", "משתמש לא נמצא");
         }
-      } catch (error) {
-        console.error('שגיאה בטעינה:', error);
+      } catch (err) {
+        console.error("Error fetching seller:", err);
       } finally {
         setLoading(false);
       }
     };
+    if (sellerId) fetchSeller();
+  }, [sellerId]);
 
-    fetchUser();
-  }, [id]);
+  // אם אני המוכר — האזנה להזמנות
+  useEffect(() => {
+    if (currentUser?.uid === sellerId) {
+      const q = query(
+        collection(db, "orders"),
+        where("sellerId", "==", sellerId),
+        where("status", "==", "pending")
+      );
+      const unsubscribe = onSnapshot(q, (snapshot) => {
+        const newOrders = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        setOrders(newOrders);
+      });
+      return unsubscribe;
+    }
+  }, [sellerId]);
 
-  if (loading) {
-    return <ActivityIndicator style={{ flex: 1 }} />;
-  }
 
-  if (!user) {
-    return (
-      <View style={styles.container}>
-        <Text>משתמש לא נמצא.</Text>
-      </View>
-    );
-  }
+  
+  // יצירת הזמנה
+   const createOrder = async () => {
+    try {
+      if (!currentUser) {
+        Alert.alert("אנא התחבר תחילה");
+        return;
+      }
+      await addDoc(collection(db, "orders"), {
+        buyerId: currentUser.uid,
+        buyerName: currentUser.displayName || "לקוח",
+        drinkType: selectedDrink || "לא נבחר משקה",
+        notes: orderNotes || "אין הערות",
+        sellerId: sellerId,
+        status: "pending",
+        createdAt: serverTimestamp(),
+      });
+      Alert.alert("הזמנה נשלחה", "המוכר יקבל התראה");
+      setSelectedDrink("");
+      setOrderNotes("");
+    } catch (err) {
+      console.error("Error creating order:", err);
+    }
+  };
+
+  // סימון כהוגש
+  const markAsServed = async (orderId: string) => {
+    try {
+      await updateDoc(doc(db, "orders", orderId), { status: "served" });
+    } catch (err) {
+      console.error("Error updating order:", err);
+    }
+  };
+
+  if (loading) return <ActivityIndicator size="large" style={{ marginTop: 50 }} />;
+  if (!seller) return <Text>לא נמצא מוכר</Text>;
 
   return (
-    <ScrollView style={styles.container}>
-      <Image source={{ uri: user.image || 'https://via.placeholder.com/150' }} style={styles.avatar} />
+    <View style={{ flex: 1, padding: 16 }}>
+      <Text style={{ fontSize: 24, fontWeight: "bold" }}>{seller.fullName}</Text>
+      <Text>{seller.description}</Text>
+      <Text>סוג מכונה: {seller.machineType}</Text>
+      <Text>משקאות: {seller.drinks?.join(", ")}</Text>
 
-      <Text style={styles.name}>{user.fullName || user.email}</Text>
-      <Text style={styles.description}>{user.description || 'אין תיאור.'}</Text>
-      {user.rating && <Text style={styles.rating}>⭐ {user.rating.toFixed(1)} / 5</Text>}
-
-      {user.address && <Text style={styles.info}>📍 {user.address}</Text>}
-      {user.availableHours && <Text style={styles.info}>🕒 {user.availableHours}</Text>}
-
-      {user.drinks && user.drinks.length > 0 && (
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>☕ משקאות:</Text>
-          {user.drinks.map((drink, i) => (
-            <Text key={i}>• {drink}</Text>
-          ))}
-        </View>
-      )}
-
-      {user.photos && user.photos.length > 0 && (
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>📸 תמונות:</Text>
-          <ScrollView horizontal>
-            {user.photos.map((photo, i) => (
-              <Image key={i} source={{ uri: photo }} style={styles.media} />
+      {currentUser?.uid !== sellerId && (
+        <>
+          {/* בחירת משקה */}
+          <Text style={{ marginTop: 20, fontSize: 16 }}>בחר משקה:</Text>
+          <Picker
+            selectedValue={selectedDrink}
+            onValueChange={(itemValue) => setSelectedDrink(itemValue)}
+            style={{ backgroundColor: "#f0f0f0", marginTop: 8 }}
+          >
+            <Picker.Item label="בחר משקה" value="" />
+            {seller.drinks?.map((drink: string, index: number) => (
+              <Picker.Item key={index} label={drink} value={drink} />
             ))}
-          </ScrollView>
-        </View>
-      )}
+          </Picker>
 
-      <TouchableOpacity style={styles.button} onPress={() => alert('הזמנה נשלחה!')}>
-        <Text style={styles.buttonText}>📩 הזמן עכשיו</Text>
-      </TouchableOpacity>
-    </ScrollView>
+          {/* הערות להזמנה */}
+          <Text style={{ marginTop: 20, fontSize: 16 }}>הערות להזמנה:</Text>
+          <TextInput
+            placeholder="לדוגמה: פחות סוכר, חלב שקדים..."
+            value={orderNotes}
+            onChangeText={setOrderNotes}
+            style={{
+              backgroundColor: "#f0f0f0",
+              padding: 10,
+              borderRadius: 8,
+              marginTop: 8,
+            }}
+          />
+
+          {/* כפתור הזמנה */}
+          <TouchableOpacity
+            onPress={createOrder}
+            style={{
+              marginTop: 20,
+              backgroundColor: "#4CAF50",
+              padding: 12,
+              borderRadius: 8,
+            }}
+          >
+            <Text style={{ color: "white", textAlign: "center", fontSize: 18 }}>
+              שלח הזמנה
+            </Text>
+          </TouchableOpacity>
+        </>
+      )}
+    </View>
   );
 }
 
-const styles = StyleSheet.create({
-  container: { padding: 16, backgroundColor: '#fff' },
-  avatar: { width: 150, height: 150, borderRadius: 75, alignSelf: 'center', marginBottom: 16 },
-  name: { fontSize: 24, fontWeight: 'bold', textAlign: 'center' },
-  description: { textAlign: 'center', fontSize: 16, marginVertical: 8 },
-  rating: { textAlign: 'center', fontSize: 18, color: '#ffa500' },
-  info: { fontSize: 16, marginVertical: 4 },
-  section: { marginTop: 16 },
-  sectionTitle: { fontWeight: 'bold', marginBottom: 8 },
-  media: { width: 120, height: 120, borderRadius: 12, marginRight: 8 },
-  button: {
-    backgroundColor: '#2e86de',
-    padding: 16,
-    borderRadius: 12,
-    marginTop: 24,
-    alignItems: 'center',
-  },
-  buttonText: { color: '#fff', fontWeight: 'bold', fontSize: 16 },
-});
