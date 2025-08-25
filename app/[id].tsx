@@ -1,7 +1,7 @@
 // app/users/[id].tsx
 
 import { Picker } from '@react-native-picker/picker';
-import { useLocalSearchParams } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { addDoc, collection, doc, getDoc, onSnapshot, query, serverTimestamp, updateDoc, where } from 'firebase/firestore';
 import React, { useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, Text, TextInput, TouchableOpacity, View } from 'react-native';
@@ -19,6 +19,7 @@ export default function SellerProfileScreen() {
   const [orderNotes, setOrderNotes] = useState("");
   //const [sellerID ,drinksOffered,] = useState<any[]>([]);  
 
+const router = useRouter();
 
   // שליפת פרטי המוכר
   useEffect(() => {

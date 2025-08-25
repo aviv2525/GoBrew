@@ -1,10 +1,37 @@
 // app/profile.tsx
 import { useRouter } from 'expo-router';
 import { getAuth } from 'firebase/auth';
-import { collection, doc, getDoc, getDocs, orderBy, query, where } from 'firebase/firestore';
+import { collection, doc, getDoc, getDocs, orderBy, query, updateDoc, where } from 'firebase/firestore';
 import { useEffect, useState } from 'react';
 import { Button, ScrollView, Text, View } from 'react-native';
 import { db } from '../lib/firebase';
+
+export const markOrderAsServed = async (orderId: string) => {
+  try {
+    await updateDoc(doc(db, "orders", orderId), {
+      status: "served"
+    });
+    console.log("Order marked as served!");
+  } catch (error) {
+    console.error("Error updating order:", error);
+  }
+};
+
+
+
+export const fetchUserRequests = async (userId: string) => {
+  const q = query(
+    collection(db, 'requests'),
+    where('userId', '==', userId),
+    orderBy('timestamp', 'desc')
+  );
+  const snapshot = await getDocs(q);
+  return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+};
+
+
+
+
 
 export default function ProfileScreen() {
   const [userData, setUserData] = useState<any>(null);

@@ -93,6 +93,7 @@ const pickImage = async () => {
         machineType,
         drinksOffered: drinksOffered.split(',').map(s => s.trim()),
         openHours,
+        online: false,
         images,
         videos 
     },

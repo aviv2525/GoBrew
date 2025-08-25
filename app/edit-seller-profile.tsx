@@ -1,6 +1,4 @@
 // app/edit-seller-profile.tsx
-import * as ImagePicker from 'expo-image-picker';
-import * as VideoPicker from 'expo-image-picker';
 import { useRouter } from 'expo-router';
 import { getAuth } from 'firebase/auth';
 import { doc, getDoc, updateDoc } from 'firebase/firestore';
@@ -13,9 +11,10 @@ import {
   ScrollView,
   Text,
   TextInput,
-  View,
+  View
 } from 'react-native';
 import { db, storage } from '../lib/firebase';
+
 
 export default function EditSellerProfile() {
   const [userData, setUserData] = useState<any>(null);
@@ -47,6 +46,11 @@ export default function EditSellerProfile() {
     return downloadURL;
   };
 
+
+  // Removed misplaced code block that referenced userData out of context.
+
+
+/*
   const handleMediaUpload = async (mediaType: 'image' | 'video') => {
     const pickerFn =
       mediaType === 'image'
@@ -73,7 +77,7 @@ export default function EditSellerProfile() {
       }));
     }
   };
-
+*/
   const handleSave = async () => {
     setLoading(true);
     try {
@@ -98,6 +102,22 @@ export default function EditSellerProfile() {
   };
 
   if (!userData) return <Text>טוען פרופיל...</Text>;
+
+const handleMediaUpload = async (uri: string, userId: string) => {
+  console.log("storage:", storage);
+  try {
+    const response = await fetch(uri);
+    const blob = await response.blob();
+
+    const storageRef = ref(storage, `users/${userId}/${Date.now()}.jpg`);
+    await uploadBytes(storageRef, blob);
+
+    return await getDownloadURL(storageRef);
+  } catch (error) {
+    console.error("Upload failed:", error);
+    throw error;
+  }
+};
 
   return (
     <ScrollView contentContainerStyle={{ padding: 20 }}>
@@ -150,7 +170,7 @@ export default function EditSellerProfile() {
           />
         ))}
       </ScrollView>
-      <Button title="הוסף תמונה" onPress={() => handleMediaUpload('image')} />
+      <Button title="הוסף תמונה" onPress={() => handleMediaUpload('image', userData.id)} />
 
       <Text style={{ marginTop: 10 }}>סרטונים:</Text>
       <ScrollView horizontal>
@@ -160,7 +180,7 @@ export default function EditSellerProfile() {
           </Text>
         ))}
       </ScrollView>
-      <Button title="הוסף סרטון" onPress={() => handleMediaUpload('video')} />
+      <Button title="הוסף סרטון" onPress={() => handleMediaUpload('video', userData.id)} />
 
       <View style={{ marginTop: 20 }}>
         <Button title={loading ? 'שומר...' : 'שמור שינויים'} onPress={handleSave} disabled={loading} />
