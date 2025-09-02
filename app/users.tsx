@@ -4,10 +4,11 @@ import { useRouter } from 'expo-router';
 import { getAuth } from 'firebase/auth'; // 
 import { collection, doc, getDoc, getDocs, onSnapshot, query, where } from 'firebase/firestore';
 import { useEffect, useState } from 'react';
-
 import { FlatList, StyleSheet, Text, View } from 'react-native';
 import { Button, Card, Paragraph, Title } from "react-native-paper";
 import { db } from '../lib/firebase';
+
+
 
 type User = {
   id: string;
@@ -18,13 +19,11 @@ type User = {
   description?: string;
   rating?: number;
   online?: boolean;
-
   address?: string;
   openHours?: string;
   drinksOffered?: string[];
   machineType?: string;
 };
-
 
 
 
@@ -64,7 +63,10 @@ export default function UsersScreen() {
   const uid = auth.currentUser?.uid;
   const isLoggedIn = !!uid;
 
+
+
 useEffect(() => {
+
     (async () => {
       const snapshot = await getDocs(collection(db, 'users'));
       const fetchedUsers: User[] = snapshot.docs.map((doc) => ({
@@ -161,3 +163,4 @@ const styles = StyleSheet.create({
   description: { fontSize: 14, color: "#666" },
   title: { fontSize: 20, fontWeight: 'bold', marginBottom: 10, color: '#333' },
 });
+

@@ -2,7 +2,7 @@
 
 import { Picker } from '@react-native-picker/picker';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { addDoc, collection, doc, getDoc, onSnapshot, query, serverTimestamp, updateDoc, where } from 'firebase/firestore';
+import { addDoc, collection, doc, getDoc, onSnapshot, query, serverTimestamp, where } from 'firebase/firestore';
 import React, { useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { auth, db } from '../lib/firebase';
@@ -83,24 +83,25 @@ const router = useRouter();
     }
   };
 
-  // סימון כהוגש
-  const markAsServed = async (orderId: string) => {
-    try {
-      await updateDoc(doc(db, "orders", orderId), { status: "served" });
-    } catch (err) {
-      console.error("Error updating order:", err);
-    }
-  };
+
 
   if (loading) return <ActivityIndicator size="large" style={{ marginTop: 50 }} />;
   if (!seller) return <Text>לא נמצא מוכר</Text>;
 
   return (
     <View style={{ flex: 1, padding: 16 }}>
+      
+      <TouchableOpacity
+        onPress={() => router.canGoBack() ? router.back() : router.replace('/users')}
+        style={{ alignSelf: 'flex-start', paddingVertical: 6, paddingHorizontal: 8 }}
+      >
+        <Text style={{ fontSize: 16 }}>⬅️ חזור</Text>
+      </TouchableOpacity>
+
       <Text style={{ fontSize: 24, fontWeight: "bold" }}>{seller.fullName}</Text>
       <Text>{seller.description}</Text>
       <Text>סוג מכונה: {seller.machineType}</Text>
-      <Text>משקאות: {seller.drinks?.join(", ")}</Text>
+      <Text>משקאות: {seller.drinksOffered?.join(", ")}</Text>
 
       {currentUser?.uid !== sellerId && (
         <>
@@ -112,7 +113,7 @@ const router = useRouter();
             style={{ backgroundColor: "#f0f0f0", marginTop: 8 }}
           >
             <Picker.Item label="בחר משקה" value="" />
-            {seller.drinks?.map((drink: string, index: number) => (
+            {seller.drinksOffered?.map((drink: string, index: number) => (
               <Picker.Item key={index} label={drink} value={drink} />
             ))}
           </Picker>

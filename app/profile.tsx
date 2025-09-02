@@ -1,10 +1,10 @@
 // app/profile.tsx
 import { useRouter } from 'expo-router';
-import { getAuth } from 'firebase/auth';
+import { getAuth, signOut } from 'firebase/auth';
 import { collection, doc, getDoc, getDocs, orderBy, query, updateDoc, where } from 'firebase/firestore';
 import { useEffect, useState } from 'react';
-import { Button, ScrollView, Text, View } from 'react-native';
-import { db } from '../lib/firebase';
+import { Button, ScrollView, Text, TouchableOpacity, View } from 'react-native';
+import { auth, db } from '../lib/firebase';
 
 export const markOrderAsServed = async (orderId: string) => {
   try {
@@ -32,6 +32,14 @@ export const fetchUserRequests = async (userId: string) => {
 
 
 
+export function LogoutButton() {
+  const onLogout = async () => { try { await signOut(auth); } catch (e) { console.log(e); } };
+  return (
+    <TouchableOpacity onPress={onLogout} style={{ paddingVertical: 6, paddingHorizontal: 8 }}>
+      <Text style={{ fontSize: 16 }}>🔒 התנתקות</Text>
+    </TouchableOpacity>
+  );
+}
 
 export default function ProfileScreen() {
   const [userData, setUserData] = useState<any>(null);
@@ -68,9 +76,16 @@ export default function ProfileScreen() {
     fetchUserAndRequests();
   }, []);
 
-  if (!userData) return <Text>טוען...</Text>;
+  if (userData == null) return <Text>טוען...</Text>;
 return (
   <ScrollView contentContainerStyle={{ padding: 20 }}>
+      <TouchableOpacity
+        onPress={() => router.canGoBack() ? router.back() : router.replace('/users')}
+        style={{ alignSelf: 'flex-start', paddingVertical: 6, paddingHorizontal: 8 }}
+      >
+        <Text style={{ fontSize: 16 }}>⬅️ חזור</Text>
+      </TouchableOpacity>
+
     <Text style={{ fontSize: 24, fontWeight: 'bold' }}>שלום, {userData.fullName}</Text>
     <Text>אימייל: {userData.email}</Text>
 

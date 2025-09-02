@@ -33,7 +33,12 @@
           "resizeMode": "contain",
           "backgroundColor": "#ffffff"
         }
-      ]
+       ],
+      ["expo-image-picker", {
+        "photosPermission": "האפליקציה צריכה גישה לגלריה כדי להעלות תמונות לתפריט.",
+        "cameraPermission": "האפליקציה צריכה גישה למצלמה לצילום תמונות לפרופיל/תפריט."
+      }]
+
     ],
     "experiments": {
       "typedRoutes": true
