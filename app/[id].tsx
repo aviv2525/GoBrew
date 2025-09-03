@@ -1,10 +1,11 @@
 // app/users/[id].tsx
 
-import { Picker } from '@react-native-picker/picker';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { addDoc, collection, doc, getDoc, onSnapshot, query, serverTimestamp, where } from 'firebase/firestore';
+import { addDoc, collection, doc, getDoc, onSnapshot, orderBy, query, serverTimestamp, where } from 'firebase/firestore';
 import React, { useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import DrinkSelect from '../components/drinkSelect';
+import MenuItemCard from '../components/MenuItemCard';
 import { auth, db } from '../lib/firebase';
 
 
@@ -57,6 +58,28 @@ const router = useRouter();
     }
   }, [sellerId]);
 
+type MenuItem = { id: string; name: string; price?: number; description?: string; imageURL?: string };
+
+const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
+
+useEffect(() => {
+  if (!sellerId) return;
+  const q = query(
+    collection(db, "users", String(sellerId), "menuItems"),
+    orderBy("updatedAt", "desc")
+  );
+  const unsub = onSnapshot(q, (ss) => {
+    setMenuItems(ss.docs.map(d => ({ id: d.id, ...(d.data() as any) })));
+  });
+  return unsub;
+}, [sellerId]);
+const itemsToRender: MenuItem[] = menuItems.length
+  ? menuItems
+  : (seller?.drinksOffered || []).map((name: string, i: number) => ({
+      id: `d-${i}`,
+      name,             // אין מחיר/תיאור – נציג רק שם (ואייקון)
+    }));
+
 
   
   // יצירת הזמנה
@@ -101,27 +124,48 @@ const router = useRouter();
       <Text style={{ fontSize: 24, fontWeight: "bold" }}>{seller.fullName}</Text>
       <Text>{seller.description}</Text>
       <Text>סוג מכונה: {seller.machineType}</Text>
-      <Text>משקאות: {seller.drinksOffered?.join(", ")}</Text>
-
+      <Text>מחובר : {seller.online}</Text>
+      <Text>כתובת: {seller.address}</Text>  
+      <Text>שעות פעילות: {seller.openHours}</Text>
+     <Text>טלפון: {seller.phoneNumber || " לא סופק"}</Text>
+      <Text>מייל: {seller.email || " לא סופק"}</Text>
       {currentUser?.uid !== sellerId && (
         <>
+        {/* בחירת משקה */}
+      <DrinkSelect
+        label="בחר משקה"
+        options={(seller?.drinksOffered || seller?.drinks || []) as string[]}
+        value={selectedDrink}
+        onChange={setSelectedDrink}
+        placeholder="בחר משקה"
+/>
+
           {/* בחירת משקה */}
-          <Text style={{ marginTop: 20, fontSize: 16 }}>בחר משקה:</Text>
-          <Picker
-            selectedValue={selectedDrink}
-            onValueChange={(itemValue) => setSelectedDrink(itemValue)}
-            style={{ backgroundColor: "#f0f0f0", marginTop: 8 }}
-          >
-            <Picker.Item label="בחר משקה" value="" />
-            {seller.drinksOffered?.map((drink: string, index: number) => (
-              <Picker.Item key={index} label={drink} value={drink} />
-            ))}
-          </Picker>
+        <Text style={{ fontSize: 18, fontWeight: '800', marginTop: 8 }}>תפריט</Text>
+  <View style={{ gap: 10 }}>
+    {itemsToRender.map((mi) => (
+      <MenuItemCard
+      key={mi.id}
+      item={{ ...mi, price: mi.price ?? 0 }}
+      onPress={() => setSelectedDrink(mi.name)} // בחירה להזמנה
+      rightSlot={
+        <View style={{ backgroundColor:'#4CAF50', borderRadius:999, paddingVertical:6, paddingHorizontal:10 }}>
+          <Text style={{ color:'#fff', fontWeight:'700' }}>בחר</Text>
+        </View>
+      }
+    />
+  ))}
+  {!itemsToRender.length && (
+    <Text style={{ opacity: 0.6 }}>אין פריטים להצגה</Text>
+  )}
+</View>
+
+
 
           {/* הערות להזמנה */}
           <Text style={{ marginTop: 20, fontSize: 16 }}>הערות להזמנה:</Text>
           <TextInput
-            placeholder="לדוגמה: פחות סוכר, חלב שקדים..."
+            placeholder="...לדוגמה: סוכר בצד, חלב שקדים"
             value={orderNotes}
             onChangeText={setOrderNotes}
             style={{

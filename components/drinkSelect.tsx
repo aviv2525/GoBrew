@@ -1,6 +1,12 @@
-import { MaterialIcons } from '@expo/vector-icons';
+// app/components/DrinkSelect.tsx
 import React, { useMemo, useState } from 'react';
-import { FlatList, Modal, Pressable, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import {
+  Modal,
+  Platform,
+  Pressable,
+  Text, TextInput, TouchableOpacity,
+  View
+} from 'react-native';
 
 type Props = {
   options: string[];
@@ -10,7 +16,22 @@ type Props = {
   label?: string;
 };
 
-export default function DrinkSelect({ options, value, onChange, placeholder = "בחר משקה", label }: Props) {
+function drinkEmoji(name: string) {
+  const n = (name || '').toLowerCase();
+  if (n.includes('קר') || n.includes('ice')) return '🧊';
+  if (n.includes('מוקה') || n.includes('שוקו')) return '🍫';
+  if (n.includes('מאצ') || n.includes('תה')) return '🍵';
+  if (n.includes('חלב') || n.includes('לאטה') || n.includes('קפוצ')) return '🥛';
+  return '☕';
+}
+
+export default function DrinkSelect({
+  options,
+  value,
+  onChange,
+  placeholder = "בחר משקה",
+  label
+}: Props) {
   const [open, setOpen] = useState(false);
   const [q, setQ] = useState("");
 
@@ -24,46 +45,81 @@ export default function DrinkSelect({ options, value, onChange, placeholder = "�
     <View style={{ gap: 6 }}>
       {!!label && <Text style={{ fontSize: 16 }}>{label}</Text>}
 
+      {/* טריגר לפתיחת המודאל */}
       <TouchableOpacity
         onPress={() => setOpen(true)}
-        style={{ backgroundColor:'#f0f0f0', padding:12, borderRadius:10, flexDirection:'row', justifyContent:'space-between', alignItems:'center' }}
+        style={{
+          backgroundColor:'#f0f0f0',
+          padding:12,
+          borderRadius:12,
+          flexDirection:'row',
+          justifyContent:'space-between',
+          alignItems:'center'
+        }}
       >
-        <Text style={{ fontSize: 16, opacity: value ? 1 : 0.6 }}>
+        <Text style={{ fontSize: 16, opacity: value ? 1 : 0.6, textAlign:'right', flex:1 }}>
           {value || placeholder}
         </Text>
-        <MaterialIcons name="arrow-drop-down" size={22} />
+        <Text aria-hidden style={{ marginStart: 8, fontSize: 18 }}>▾</Text>
       </TouchableOpacity>
 
+      {/* מודאל בחירה */}
       <Modal visible={open} transparent animationType="fade" onRequestClose={() => setOpen(false)}>
+        {/* שכבת רקע */}
         <Pressable onPress={() => setOpen(false)} style={{ flex:1, backgroundColor:'rgba(0,0,0,0.25)' }}>
+          {/* סדין מלמטה */}
           <Pressable
-            style={{ marginTop: 'auto', backgroundColor:'#fff', padding:12, borderTopLeftRadius:16, borderTopRightRadius:16, gap:8, maxHeight: '70%' }}
-            onPress={(e) => e.stopPropagation()}
+            onPress={(e)=>e.stopPropagation()}
+            style={{
+              marginTop:'auto', backgroundColor:'#fff', padding:14,
+              borderTopLeftRadius:16, borderTopRightRadius:16, gap:12,
+              maxHeight:'70%'
+            }}
           >
-            <View style={{ height:4, width:40, backgroundColor:'#ddd', borderRadius:2, alignSelf:'center', marginBottom:6 }} />
+            <View style={{ height:4, width:40, backgroundColor:'#ddd', borderRadius:2, alignSelf:'center' }} />
+
             <TextInput
               placeholder="חיפוש משקה…"
               value={q}
               onChangeText={setQ}
-              style={{ backgroundColor:'#f5f5f5', padding:10, borderRadius:8 }}
+              style={{ backgroundColor:'#f5f5f5', padding:12, borderRadius:10, textAlign:'right' }}
+              autoFocus={Platform.OS !== 'android'}
             />
-            <FlatList
-              data={filtered}
-              keyExtractor={(it, i)=>`${it}-${i}`}
-              renderItem={({ item }) => {
-                const selected = item === value;
+
+            {/* גריד צ'יפים */}
+            <View style={{ flexDirection:'row', flexWrap:'wrap', gap:8 }}>
+              {filtered.map((item, idx) => {
+                const isSelected = item === value;
                 return (
                   <TouchableOpacity
+                    key={`${item}-${idx}`}
                     onPress={() => { onChange(item); setOpen(false); }}
-                    style={{ paddingVertical:12, flexDirection:'row', alignItems:'center', justifyContent:'space-between' }}
+                    style={{
+                      flexDirection:'row',
+                      alignItems:'center',
+                      gap:8,
+                      paddingVertical:10,
+                      paddingHorizontal:14,
+                      borderRadius:999,
+                      borderWidth:1,
+                      borderColor: isSelected ? '#222' : '#e6e6e6',
+                      backgroundColor: isSelected ? '#222' : '#fff',
+                      shadowColor:'#000',
+                      shadowOpacity:0.06,
+                      shadowRadius:6,
+                      shadowOffset:{width:0,height:3},
+                      elevation: isSelected ? 2 : 0
+                    }}
                   >
-                    <Text style={{ fontSize:16 }}>{item}</Text>
-                    {selected && <MaterialIcons name="check" size={20} />}
+                    <Text style={{ fontSize:16 }}>{drinkEmoji(item)}</Text>
+                    <Text style={{ fontSize:16, color: isSelected ? '#fff' : '#111' }}>{item}</Text>
                   </TouchableOpacity>
                 );
-              }}
-              ItemSeparatorComponent={() => <View style={{ height:1, backgroundColor:'#eee' }} />}
-            />
+              })}
+              {filtered.length === 0 && (
+                <Text style={{ textAlign:'center', opacity:0.6, width:'100%' }}>לא נמצאו תוצאות</Text>
+              )}
+            </View>
           </Pressable>
         </Pressable>
       </Modal>
