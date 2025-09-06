@@ -1,10 +1,11 @@
-import { router } from 'expo-router';
+import { setOnlineStatus } from '@/lib/onlineStatus';
+import { router, Slot } from 'expo-router';
 import { FirebaseError } from 'firebase/app';
 import { signInWithEmailAndPassword } from 'firebase/auth';
 import { useState } from 'react';
 import { ActivityIndicator, Alert, Keyboard, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { auth } from '../../lib/firebase';
-
+import { usePresence } from '../users';
 
 
 function mapAuthError(err: unknown): string {
@@ -31,8 +32,11 @@ function mapAuthError(err: unknown): string {
   }
   return 'שגיאה לא צפויה.';
 }
-
-export default function LoginScreen() {
+export function RootLayout() {
+  usePresence(); // מפעיל מעקב נוכחות לכל המשתמש
+  return <Slot />; // או ה-Navigator שלך
+}
+  export default function LoginScreen() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [errText, setErrText] = useState('');
@@ -56,6 +60,7 @@ export default function LoginScreen() {
     Keyboard.dismiss();
     try {
       await signInWithEmailAndPassword(auth, e, password);
+      try { await setOnlineStatus(true); } catch {}
       router.replace('/users');
     } catch (error) {
       console.error('Login error:', error);

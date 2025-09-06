@@ -4,9 +4,10 @@ import { useRouter } from 'expo-router';
 import { getAuth } from 'firebase/auth'; // 
 import { collection, doc, getDoc, getDocs, onSnapshot, query, where } from 'firebase/firestore';
 import { useEffect, useState } from 'react';
-import { FlatList, StyleSheet, Text, View } from 'react-native';
+import { AppState, FlatList, StyleSheet, Text, View } from 'react-native';
 import { Button, Card, Paragraph, Title } from "react-native-paper";
-import { db } from '../lib/firebase';
+import { auth, db } from '../lib/firebase';
+import { setOnlineStatus } from '../lib/onlineStatus';
 
 
 
@@ -26,6 +27,28 @@ type User = {
 };
 
 
+export function usePresence() {
+  useEffect(() => {
+    let uid = auth.currentUser?.uid;
+    if (!uid) return;
+
+    // מסמן כ-online כשנכנסים
+    setOnlineStatus(true);
+
+    const sub = AppState.addEventListener("change", (state) => {
+      if (state === "active") {
+        setOnlineStatus(true);
+      } else {
+        setOnlineStatus(false);
+      }
+    });
+
+    return () => {
+      sub.remove();
+      setOnlineStatus(false); // ברגע שיוצאים לגמרי
+    };
+  }, []);
+}
 
 export default function UsersScreen() {
   
@@ -53,27 +76,25 @@ export default function UsersScreen() {
         
         */
        
+       const router = useRouter();
+       const [sellers, setSellers] = useState<User[]>([]);
+       const [role, setRole] = useState<'seller' | 'user' | null>(null);       // ⬅️ חדש
+       const [pendingCount, setPendingCount] = useState(0);                    // ⬅️ חדש
+       const auth = getAuth();
+       const uid = auth.currentUser?.uid;
+       const isLoggedIn = !!uid;
        
-       
-  const router = useRouter();
-  const [sellers, setSellers] = useState<User[]>([]);
-  const [role, setRole] = useState<'seller' | 'user' | null>(null);       // ⬅️ חדש
-  const [pendingCount, setPendingCount] = useState(0);                    // ⬅️ חדש
-  const auth = getAuth();
-  const uid = auth.currentUser?.uid;
-  const isLoggedIn = !!uid;
 
 
-
-useEffect(() => {
-
-    (async () => {
-      const snapshot = await getDocs(collection(db, 'users'));
-      const fetchedUsers: User[] = snapshot.docs.map((doc) => ({
+       useEffect(() => {
+         (async () => {
+           const snapshot = await getDocs(collection(db, 'users'));
+           const fetchedUsers: User[] = snapshot.docs.map((doc) => ({
         id: doc.id,
         ...doc.data(),
       })) as User[];
       setSellers(fetchedUsers.filter((u) => u.role === 'seller'));
+
     })();
   }, []);
 
@@ -101,6 +122,23 @@ useEffect(() => {
   const renderItem = ({ item }: { item: User }) => (
     <Card style={styles.card} onPress={() => router.push(`/${item.id}`)}>
       <Card.Cover source={{ uri: item.imageUrl || 'https://via.placeholder.com/400x200' }} />
+          {/* תג סטטוס צף */}
+    <View style={styles.statusBadge}>
+      <View
+        style={[
+          styles.statusDot,
+          { backgroundColor: item.online ? '#22c55e' : '#94a3b8' }
+        ]}
+      />
+      <Text
+        style={[
+          styles.statusText,
+          item.online ? styles.statusOnline : styles.statusOffline
+        ]}
+      >
+        {item.online ? 'ONLINE' : 'OFFLINE'}
+      </Text>
+    </View>
       <Card.Content>
         <Title style={styles.name}>{item.fullName || item.email}</Title>
         <Paragraph style={styles.description}>📍 {item.address || 'כתובת לא זמינה'}</Paragraph>
@@ -117,6 +155,7 @@ useEffect(() => {
   );
 
   return (
+
     <View style={{ flex: 1, padding: 20 }}>
       {/* אזור כפתורים עליון */}
       <View style={{ alignItems: 'flex-end', marginBottom: 10, gap: 8 }}>
@@ -128,6 +167,7 @@ useEffect(() => {
             ניהול הזמנות{pendingCount ? ` (${pendingCount})` : ''}
           </Button>
         )}
+
 
         {isLoggedIn ? (
           <Button onPress={() => router.push('/profile')}>הפרופיל שלי</Button>
@@ -158,9 +198,40 @@ const styles = StyleSheet.create({
     shadowColor: "#000",
     shadowOpacity: 0.2,
     shadowRadius: 4,
+    // חשוב כדי שהתג יהיה יחסי לכרטיס
+    position: 'relative',
   },
   name: { fontSize: 18, fontWeight: "bold", color: "#333" },
   description: { fontSize: 14, color: "#666" },
   title: { fontSize: 20, fontWeight: 'bold', marginBottom: 10, color: '#333' },
+
+  // חדש:
+  statusBadge: {
+    position: 'absolute',
+    top: 10,
+    right: 10,
+    backgroundColor: 'rgba(255,255,255,0.92)',
+    borderRadius: 999,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    borderWidth: 1,
+    borderColor: '#eee',
+  },
+  statusDot: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+  },
+  statusText: {
+    fontSize: 12,
+    fontWeight: '700',
+  },
+  statusOnline: { color: '#16a34a' },  // ירוק יפה
+  statusOffline: { color: '#64748b' }, // אפור-כחלחל
 });
+
+
 

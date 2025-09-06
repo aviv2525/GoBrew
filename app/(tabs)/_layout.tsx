@@ -1,5 +1,12 @@
 // app/(tabs)/_layout.tsx
-import { Tabs } from 'expo-router';
+import { Slot, Tabs } from 'expo-router';
+import { usePresence } from '../users';
+export function RootLayout() {
+  usePresence(); // hook ירוץ תמיד ברקע
+  return <Slot />;
+}
+
+
 
 export default function TabLayout() {
   return (

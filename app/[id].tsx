@@ -3,7 +3,7 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { addDoc, collection, doc, getDoc, onSnapshot, orderBy, query, serverTimestamp, where } from 'firebase/firestore';
 import React, { useEffect, useState } from 'react';
-import { ActivityIndicator, Alert, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Alert, Image, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import DrinkSelect from '../components/drinkSelect';
 import MenuItemCard from '../components/MenuItemCard';
 import { auth, db } from '../lib/firebase';
@@ -114,12 +114,31 @@ const itemsToRender: MenuItem[] = menuItems.length
   return (
     <View style={{ flex: 1, padding: 16 }}>
       
+      <View style={{ alignItems: 'center' }}>
+          <Image
+        source={require('../assets/images/coffee.png')}
+        //source={{ uri: seller.photoURL || 'https://placehold.co/100x100/png' }}
+        style={{ width: 250, height: 250, borderRadius: 50 }}
+        />
+          {/* נקודת סטטוס על האווטאר */}
+    <View style={{
+      position: 'absolute',
+      bottom: 6, right: 6,
+      width: 16, height: 16, borderRadius: 8,
+      backgroundColor: seller.online ? '#22c55e' : '#94a3b8',
+      borderWidth: 2, borderColor: '#fff'
+    }}/>
+  </View>
+      
+
+  <Text>{seller.fullName}</Text>
       <TouchableOpacity
         onPress={() => router.canGoBack() ? router.back() : router.replace('/users')}
         style={{ alignSelf: 'flex-start', paddingVertical: 6, paddingHorizontal: 8 }}
       >
         <Text style={{ fontSize: 16 }}>⬅️ חזור</Text>
       </TouchableOpacity>
+
 
       <Text style={{ fontSize: 24, fontWeight: "bold" }}>{seller.fullName}</Text>
       <Text>{seller.description}</Text>
@@ -129,6 +148,9 @@ const itemsToRender: MenuItem[] = menuItems.length
       <Text>שעות פעילות: {seller.openHours}</Text>
      <Text>טלפון: {seller.phoneNumber || " לא סופק"}</Text>
       <Text>מייל: {seller.email || " לא סופק"}</Text>
+
+
+
       {currentUser?.uid !== sellerId && (
         <>
         {/* בחירת משקה */}
